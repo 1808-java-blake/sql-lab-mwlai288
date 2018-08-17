@@ -43,23 +43,71 @@
         SELECT * FROM employee WHERE hiredate BETWEEN '2003-06-01' and '2004-03-01' ORDER BY hiredate;
 -- 2.7 DELETE
 -- Task – Delete a record in Customer table where the name is Robert Walter (There may be constraints that rely on this, find out how to resolve them).
-        
+         DELETE FROM invoiceline WHERE invoiceid IN
+        (SELECT invoiceid FROM invoice WHERE customerid IN
+        (SELECT  customerid FROM customer WHERE firstname = 'Robert' AND lastname = 'Walter'));
+        DELETE FROM invoice WHERE customerid IN
+        (SELECT  customerid FROM customer WHERE firstname = 'Robert' AND lastname = 'Walter');
+        DELETE FROM customer WHERE firstname = 'Robert' AND lastname = 'Walter';
 -- SQL Functions
 -- In this section you will be using the Oracle system functions, as well as your own functions, to perform various actions against the database
 -- 3.1 System Defined Functions
 -- Task – Create a function that returns the current time.
+        CREATE OR REPLACE FUNCTION my_time()
+        RETURNS TIME AS $$
+	BEGIN
+	RETURN current_time;
+	END;
+        $$ LANGUAGE plpgsql;
+        SELECT my_time();
 -- Task – create a function that returns the length of a mediatype from the mediatype table
+        CREATE OR REPLACE FUNCTION my_mediatype(name_type VARCHAR(120))
+        RETURNS VARCHAR AS $$
+        BEGIN
+        RETURN LENGTH(name_type);
+        END;
+        $$ LANGUAGE plpgsql;
+        SELECT my_mediatype(name) FROM mediatype;
 -- 3.2 System Defined Aggregate Functions
+
 -- Task – Create a function that returns the average total of all invoices
+        CREATE OR REPLACE FUNCTION my_total()
+        RETURNS NUMERIC AS $$
+	BEGIN
+	RETURN AVG(total) FROM invoice;
+	END;
+        $$ LANGUAGE plpgsql; 
+        SELECT my_total();
 -- Task – Create a function that returns the most expensive track
+        CREATE OR REPLACE FUNCTION most_expensive()
+        RETURNS NUMERIC AS $$
+	BEGIN
+	RETURN MAX(unitprice) FROM track;
+	END;
+        $$ LANGUAGE plpgsql;
+        SELECT most_expensive();
 -- 3.3 User Defined Scalar Functions
+
 -- Task – Create a function that returns the average price of invoiceline items in the invoiceline table
+        CREATE OR REPLACE FUNCTION invoiceline_avg()
+        RETURNS NUMERIC AS $$
+	BEGIN
+	RETURN AVG(unitprice) FROM invoiceline;
+	END;
+        $$ LANGUAGE plpgsql;
+        SELECT invoiceline_avg();
+
 -- 3.4 User Defined Table Valued Functions
+
 -- Task – Create a function that returns all employees who are born after 1968.
+        
 -- 4.0 Stored Procedures
 --  In this section you will be creating and executing stored procedures. You will be creating various types of stored procedures that take input and output parameters.
+
 -- 4.1 Basic Stored Procedure
+
 -- Task – Create a stored procedure that selects the first and last names of all the employees.
+
 -- 4.2 Stored Procedure Input Parameters
 -- Task – Create a stored procedure that updates the personal information of an employee.
 -- Task – Create a stored procedure that returns the managers of an employee.
