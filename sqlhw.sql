@@ -100,32 +100,128 @@
 -- 3.4 User Defined Table Valued Functions
 
 -- Task – Create a function that returns all employees who are born after 1968.
-        
+        CREATE OR REPLACE FUNCTION born_after_1968()
+        RETURNS SETOF employee AS $$
+	BEGIN
+	RETURN QUERY SELECT * FROM employee WHERE birthdate >= '1968-01-01';
+	END;
+        $$ LANGUAGE plpgsql;
+        SELECT born_after_1968();
 -- 4.0 Stored Procedures
 --  In this section you will be creating and executing stored procedures. You will be creating various types of stored procedures that take input and output parameters.
 
 -- 4.1 Basic Stored Procedure
 
 -- Task – Create a stored procedure that selects the first and last names of all the employees.
-
+        CREATE OR REPLACE FUNCTION employee_names()
+        RETURNS TABLE(first_name VARCHAR(20), last_name VARCHAR(20)) AS $$
+	BEGIN
+	RETURN QUERY SELECT firstname, lastname FROM employee;
+	END;
+        $$ LANGUAGE plpgsql;
+        SELECT employee_names();
 -- 4.2 Stored Procedure Input Parameters
 -- Task – Create a stored procedure that updates the personal information of an employee.
+        CREATE OR REPLACE FUNCTION update_employee () RETURNS NUMERIC(10, 2) AS $$
+        RETURNS list NUMERIC(10, 2);
+        BEGIN
+   	UPDATE employee
+	SET firstname = 'Hal', lastname = 'Jordan'
+	WHERE employeeid = 1; 
+	RETURN list;
+        END;
+        $$ LANGUAGE plpgsql;
+        SELECT update_employee();
 -- Task – Create a stored procedure that returns the managers of an employee.
+        CREATE OR REPLACE FUNCTION employee_manager()
+        RETURNS TABLE (first_name VARCHAR, last_name VARCHAR, reports_to INTEGER, employee_id INTEGER, managers_first_name VARCHAR, managers_last_name VARCHAR)
+        AS $$
+        BEGIN
+        RETURN QUERY 
+        SELECT a.firstname, a.lastname, a.reportsto, b.employeeid, b.firstname, b.lastname FROM employee a, employee b 
+	WHERE a.reportsto = b.employeeid;
+        END;
+        $$ LANGUAGE plpgsql;
+        SELECT employee_manager();
 -- 4.3 Stored Procedure Output Parameters
+ 
 -- Task – Create a stored procedure that returns the name and company of a customer.
+        CREATE OR REPLACE FUNCTION customer_company()
+        RETURNS TABLE (first_name VARCHAR, last_name VARCHAR, company_name VARCHAR) AS $$
+        BEGIN
+        RETURN QUERY 
+	SELECT firstname, lastname, company FROM customer;
+        END
+        $$ LANGUAGE plpgsql;
+        SELECT customer_company();
 -- 5.0 Transactions
 -- In this section you will be working with transactions. Transactions are usually nested within a stored procedure. You will also be working with handling errors in your SQL.
+
 -- Task – Create a transaction that given a invoiceId will delete that invoice (There may be constraints that rely on this, find out how to resolve them).
+
 -- Task – Create a transaction nested within a stored procedure that inserts a new record in the Customer table
+        CREATE OR REPLACE FUNCTION add_customer(customer_id INTEGER,first_name VARCHAR, last_name VARCHAR, customer_email VARCHAR)
+	RETURNS void AS $$
+	BEGIN
+	  INSERT INTO customer (customerid, firstname, lastname, email) VALUES (customer_id, first_name, last_name, customer_email);
+	END;
+	$$ LANGUAGE plpgsql
+        SELECT add_customer(62, "Oliver", "Queen", "greenarrow@gmail.com")
 -- 6.0 Triggers
 -- In this section you will create various kinds of triggers that work when certain DML statements are executed on a table.
 -- 6.1 AFTER/FOR
 -- Task - Create an after insert trigger on the employee table fired after a new record is inserted into the table.
--- Task – Create an after update trigger on the album table that fires after a row is inserted in the table
--- Task – Create an after delete trigger on the customer table that fires after a row is deleted from the table.
+        CREATE TABLE employee_log(new_employeeid VARCHAR(20), new_firstname VARCHAR(20), new_lastname VARCHAR(20));
+        CREATE OR REPLACE FUNCTION employee_log_trig_fun()
+        RETURNS TRIGGER AS $$
+          BEGIN
+            IF(TG_OP = 'INSERT') THEN
+            INSERT INTO employee_log (new_employeeid, new_firstname, new_lastname) VALUES (NEW.employeeid, NEW.lastname, NEW.firstname);
+          END IF;
+        RETURN NEW; 
+          END;
+        $$ LANGUAGE plpgsql;
+        CREATE TRIGGER employee_trigger
+        AFTER INSERT ON employee
+        FOR EACH ROW
+        EXECUTE PROCEDURE employee_trig();
 
+-- Task – Create an after update trigger on the album table that fires after a row is inserted in the table
+        CREATE TABLE album_log(old_albumid VARCHAR(20), new_albumid VARCHAR(20),old_title VARCHAR(20), new_title VARCHAR(20), old_artistid VARCHAR(20), new_artistid VARCHAR(20));
+
+        CREATE OR REPLACE FUNCTION album_update() RETURNS TRIGGER AS $$
+        BEGIN
+        IF(TG_OP = 'UPDATE') THEN
+        INSERT INTO album_log (old_albumid, new_albumid, old_title, new_title, old_artistid, new_artistid) VALUES (OLD.albumid, NEW.albumid, OLD.title, NEW.title, OLD.artistid, NEW.artistid);
+        END IF;
+        RETURN NEW; 
+        END;
+        $$ LANGUAGE plpgsql;
+        
+        CREATE TRIGGER update_album_trig
+        AFTER UPDATE ON album
+        FOR EACH ROW
+        EXECUTE PROCEDURE update_album_trig();
+
+-- Task – Create an after delete trigger on the customer table that fires after a row is deleted from the table.
+        CREATE OR REPLACE FUNCTION delete_customer() RETURNS TRIGGER AS $$
+        BEGIN
+        IF(TG_OP = 'DELETE') THEN
+        DELETE FROM customer 
+        WHERE customerid = '23';
+        END;
+        $$ LANGUAGE plpgsql;
+        CREATE TRIGGER delete_trigger AFTER INSERT ON customer
+        FOR EACH ROW EXECUTE PROCEDURE delete_customer();
 -- 6.2 INSTEAD OF
 -- Task – Create an instead of trigger that restricts the deletion of any invoice that is priced over 50 dollars.
+        CREATE OR REPLACE FUNCTION restrict_invoice_del() RETURNS TRIGGER AS $$
+        BEGIN
+        IF(TG_OP = 'DELETE' AND invoice <=50);
+        END;
+        $$ LANGUAGE plpgsql;
+        CREATE TRIGGER restrict_del BEFORE DELETE ON invoice
+        FOR EACH ROW EXECUTE PROCEDURE restrict_del();
 -- 7.0 JOINS
 -- In this section you will be working with combing various tables through the use of joins. You will work with outer, inner, right, left, cross, and self joins.
 -- 7.1 INNER
