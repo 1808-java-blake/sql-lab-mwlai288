@@ -133,16 +133,7 @@
         $$ LANGUAGE plpgsql;
         SELECT update_employee();
 -- Task – Create a stored procedure that returns the managers of an employee.
-        CREATE OR REPLACE FUNCTION employee_manager()
-        RETURNS TABLE (first_name VARCHAR, last_name VARCHAR, reports_to INTEGER, employee_id INTEGER, managers_first_name VARCHAR, managers_last_name VARCHAR)
-        AS $$
-        BEGIN
-        RETURN QUERY 
-        SELECT a.firstname, a.lastname, a.reportsto, b.employeeid, b.firstname, b.lastname FROM employee a, employee b 
-	WHERE a.reportsto = b.employeeid;
-        END;
-        $$ LANGUAGE plpgsql;
-        SELECT employee_manager();
+
 -- 4.3 Stored Procedure Output Parameters
  
 -- Task – Create a stored procedure that returns the name and company of a customer.
@@ -171,20 +162,7 @@
 -- In this section you will create various kinds of triggers that work when certain DML statements are executed on a table.
 -- 6.1 AFTER/FOR
 -- Task - Create an after insert trigger on the employee table fired after a new record is inserted into the table.
-        CREATE TABLE employee_log(new_employeeid VARCHAR(20), new_firstname VARCHAR(20), new_lastname VARCHAR(20));
-        CREATE OR REPLACE FUNCTION employee_log_trig_fun()
-        RETURNS TRIGGER AS $$
-          BEGIN
-            IF(TG_OP = 'INSERT') THEN
-            INSERT INTO employee_log (new_employeeid, new_firstname, new_lastname) VALUES (NEW.employeeid, NEW.lastname, NEW.firstname);
-          END IF;
-        RETURN NEW; 
-          END;
-        $$ LANGUAGE plpgsql;
-        CREATE TRIGGER employee_trigger
-        AFTER INSERT ON employee
-        FOR EACH ROW
-        EXECUTE PROCEDURE employee_trig();
+      
 
 -- Task – Create an after update trigger on the album table that fires after a row is inserted in the table
         CREATE TABLE album_log(old_albumid VARCHAR(20), new_albumid VARCHAR(20),old_title VARCHAR(20), new_title VARCHAR(20), old_artistid VARCHAR(20), new_artistid VARCHAR(20));
